@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="ur" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>سامان لسٹ</title>
+<meta name="theme-color" content="#1b5e20">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="سامان لسٹ">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  body { font-family: 'Noto Nastaliq Urdu', serif; background:#f3f3f3; margin:0; padding:16px; text-align:center; }
+  h2 { margin:8px 0 14px; line-height:2; }
+  .box { background:#fff; border-radius:12px; padding:14px; max-width:560px; margin:0 auto 14px; box-shadow:0 1px 4px #0002; }
+  .row { display:flex; align-items:center; justify-content:space-between; margin:8px 0; font-size:20px; }
+  .row label { flex:1; text-align:right; }
+  input { font-size:22px; width:110px; text-align:center; padding:6px; border:1px solid #999; border-radius:8px; direction:ltr; }
+  .save { font:inherit; font-size:20px; padding:10px 30px; background:#1b5e20; color:#fff; border:0; border-radius:10px; cursor:pointer; margin-top:8px; }
+  canvas { max-width:100%; height:auto; border:1px solid #ccc; background:#fff; }
+</style>
+</head>
+<body>
+
+<h2>سامان کی لسٹ</h2>
+
+<div class="box">
+  <div>گاہک کی ڈیمانڈ (کتنی دیگیں؟)</div>
+  <div class="row"><label>نمکین دیگ</label><input type="number" id="c_namkeen" value="0" min="0" step="0.5"></div>
+  <div class="row"><label>زردہ دیگ</label><input type="number" id="c_zarda" value="0" min="0" step="0.5"></div>
+  <div class="row"><label>سالن دیگ</label><input type="number" id="c_salan" value="0" min="0" step="0.5"></div>
+  <button class="save" id="saveBtn">JPG محفوظ کریں</button>
+  <div><button class="save" id="installBtn" style="display:none;background:#fff;color:#1b5e20;border:2px solid #1b5e20;font-size:17px;padding:6px 22px">ایپ انسٹال کریں</button></div>
+</div>
+
+<canvas id="cv"></canvas>
+
+<script>
+// ===== دکان کی معلومات =====
+const SHOP  = 'صادق ڈراآئی کلینرز اینڈ پکوان سنٹر';
+const PHONE = '03017271392';
+
+// ===== سامان (1 دیگ کے حساب سے) =====
+// g = گرام میں وزن | base: 'k' (کلو/پاؤ) یا 'g' (گرام) | q+unit = گنتی والی چیز
+const DEGS = {
+  namkeen: { label:'نمکین', items:[
+    { n:'چاول',          g:10000, base:'k' },
+    { n:'گھی',           g:2000,  base:'k' },
+    { n:'گرم مصالحہ',    g:125,   base:'k' },
+    { n:'دھنیا', g:100, base:'g' },
+    { n:'لال مرچ',       g:50,    base:'g' },
+    { n:'املی',          g:125,   base:'k' },
+    { n:'چائنہ نمک', g:50, base:'g' },
+    { n:'نمک',           q:1, unit:'تھیلی' },
+    { n:'بریانی مصالحہ', q:1, unit:'ڈبہ' },
+    { n:'پیاز',          g:2000,  base:'k' },
+    { n:'ٹماٹر',         g:1000,  base:'k' },
+    { n:'تھوم',          g:125,   base:'k' },
+    { n:'ادرک',          g:125,   base:'k' },
+    { n:'سبز مرچ', g:250, base:'k' },
+    { n:'لیموں',         g:125,   base:'k' },
+    { n:'دہی',           g:1000,  base:'k' }
+  ]},
+  zarda: { label:'زردہ', items:[
+    { n:'چاول',         g:10000, base:'k' },
+    { n:'چینی',         g:11000, base:'k' },
+    { n:'گری',          g:250,   base:'k' },
+    { n:'سوگی',         g:250,   base:'k' },
+    { n:'لاچی',         g:10,    base:'g' },
+    { n:'رنگ زرد',      q:3, unit:'پیکٹ' },
+    { n:'مربع',         q:3, unit:'ڈبے' },
+    { n:'لونگ',         g:10,    base:'g' },
+    { n:'چھوارے',       g:1000,  base:'k' },
+    { n:'دودھ',         g:2000,  base:'k' }
+  ]},
+  salan: { label:'سالن', items:[
+    { n:'گھی',                g:2000, base:'k' },
+    { n:'پیاز',               g:2000, base:'k' },
+    { n:'گرم مصالحہ', g:100, base:'g' },
+    { n:'ٹماٹر',              g:1000, base:'k' },
+    { n:'دھنیا', g:100, base:'g' },
+    { n:'تھوم',               g:125,  base:'k' },
+    { n:'ہلدی',               g:50,   base:'g' },
+    { n:'ادرک',               g:125,  base:'k' },
+    { n:'لال مرچ',            g:50,   base:'g' },
+    { n:'سبز مرچ',            g:125,  base:'k' },
+    { n:'آلو بخارا',          g:50,   base:'g' },
+    { n:'دہی',                g:1000, base:'k' },
+    { n:'کڑاہی گوشت مصالحہ',  q:1, unit:'ڈبہ' },
+    { n:'قصوری میتھی',        q:1, unit:'ڈبہ' },
+    { n:'نمک',                q:1, unit:'تھیلی' },
+    { n:'چائنہ نمک',          g:30,   base:'g' },
+    { n:'کالی مرچ',           g:20,   base:'g' },
+    { n:'سفید زیرہ',          g:20,   base:'g' },
+    { n:'وائٹ کریم',          q:1, unit:'ڈبلی' }
+  ]}
+};
+
+// سبزی میں شامل چیزیں (باقی سب کریانہ میں)
+const VEG = new Set(['پیاز', 'ٹماٹر', 'تھوم', 'ادرک', 'سبز مرچ', 'لیموں']);
+
+const FONT = '"Noto Nastaliq Urdu", "Noto Naskh Arabic", serif';
+
+function num(x){ return String(Math.round(x*100)/100); }
+function fracPao(p){
+  const w = Math.floor(p), h = (p - w) === 0.5;
+  return (w ? w : '') + (h ? '½' : '');
+}
+
+// ایک ہی چیز کئی دیگوں میں ہو تو جمع کر کے ایک ہی لائن
+function mergeItems(counts){
+  const map = new Map(), order = [];
+  Object.keys(DEGS).forEach(k => {
+    const c = counts[k];
+    if (!(c > 0)) return;
+    DEGS[k].items.forEach(it => {
+      const key = it.n + '|' + (it.q !== undefined ? it.unit : 'w');
+      if (!map.has(key)) {
+        map.set(key, it.q !== undefined
+          ? { n: it.n, unit: it.unit, q: 0 }
+          : { n: it.n, base: it.base, g: 0 });
+        order.push(key);
+      }
+      const t = map.get(key);
+      if (it.q !== undefined) t.q += it.q * c; else t.g += it.g * c;
+    });
+  });
+  return order.map(k => map.get(k));
+}
+
+function qtyText(it){
+  if (it.q !== undefined) return num(it.q) + ' ' + it.unit;
+  const g  = Math.round(it.g);
+  const kg = Math.floor(g / 1000);
+  const rem = g - kg * 1000;
+  // 1 کلو یا اس سے زیادہ: 3½ کلو کی طرح (¼ ½ ¾ کے ساتھ)
+  if (kg > 0) {
+    const fr = { 250: '¼', 500: '½', 750: '¾' }[rem];
+    if (rem === 0) return kg + ' کلو';
+    if (fr) return kg + fr + ' کلو';
+  }
+  const parts = [];
+  if (kg > 0) parts.push(kg + ' کلو');
+  if (it.base === 'g') {
+    if (rem > 0) parts.push(rem + ' گرام');
+  } else if (rem > 0) {
+    if (rem % 125 === 0) parts.push(fracPao(rem / 250) + ' پاؤ');
+    else parts.push(rem + ' گرام');
+  }
+  return parts.join(' ');
+}
+
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+
+function getCounts(){
+  const r = {};
+  Object.keys(DEGS).forEach(k => {
+    const v = parseFloat(document.getElementById('c_' + k).value);
+    r[k] = v > 0 ? v : 0;
+  });
+  return r;
+}
+
+async function draw(){
+  const counts = getCounts();
+  const all = mergeItems(counts);
+  const isVeg = it => it.q === undefined && VEG.has(it.n);
+  const sections = [
+    { title: 'سبزی',   list: all.filter(isVeg) },
+    { title: 'کریانہ', list: all.filter(it => !isVeg(it)) }
+  ].filter(s => s.list.length);
+  // ہر سیکشن کا عنوان بھی ایک لائن گنا جائے گا
+  const items = [];
+  sections.forEach(s => { items.push({ head: s.title }); s.list.forEach(it => items.push(it)); });
+  try { await document.fonts.load('40px "Noto Nastaliq Urdu"'); } catch(e){}
+
+  // پرچی کا سائز ہمیشہ ایک جیسا (پہلے والا ہی)
+  const W = 1080, H = 2205, headH = 400, footH = 230;
+  const listH = H - headH - footH;
+  const rowH = Math.min(105, listH / Math.max(items.length, 1));
+  const fs = Math.min(46, Math.floor(rowH * 0.5));   // زیادہ سامان ہو تو لکھائی چھوٹی
+
+  cv.width = W; cv.height = H;
+  ctx.direction = 'rtl';
+  ctx.textBaseline = 'middle';
+
+  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = '#1b5e20'; ctx.lineWidth = 8;
+  ctx.strokeRect(20, 20, W - 40, H - 40);
+
+  // اوپر: دکان کا نام اور نمبر
+  ctx.fillStyle = '#1b5e20'; ctx.textAlign = 'center';
+  ctx.font = 'bold 58px ' + FONT;
+  ctx.fillText(SHOP, W / 2, 110);
+  ctx.fillStyle = '#000';
+  ctx.font = 'bold 50px ' + FONT;
+  ctx.direction = 'ltr';
+  ctx.fillText(PHONE, W / 2, 215);
+  ctx.direction = 'rtl';
+
+  ctx.strokeStyle = '#1b5e20'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(60, 275); ctx.lineTo(W - 60, 275); ctx.stroke();
+
+  // عنوان: مثلاً  2 زردہ دیگ ، 1 نمکین دیگ
+  const titleParts = Object.keys(DEGS)
+    .filter(k => counts[k] > 0)
+    .map(k => num(counts[k]) + ' ' + DEGS[k].label + ' دیگ');
+  const title = titleParts.length ? titleParts.join(' ، ') : 'سامان لسٹ';
+  ctx.fillStyle = '#b71c1c';
+  let tf = 66;
+  ctx.font = 'bold ' + tf + 'px ' + FONT;
+  while (ctx.measureText(title).width > W - 140 && tf > 28) {
+    tf -= 2; ctx.font = 'bold ' + tf + 'px ' + FONT;
+  }
+  ctx.fillText(title, W / 2, 345);
+
+  // سامان
+  let y = headH;
+  let band = 0;
+  items.forEach((it) => {
+    if (it.head) {
+      ctx.fillStyle = '#1b5e20'; ctx.fillRect(50, y, W - 100, rowH);
+      ctx.fillStyle = '#fff'; ctx.font = 'bold ' + fs + 'px ' + FONT;
+      ctx.textAlign = 'center';
+      ctx.fillText(it.head, W / 2, y + rowH / 2 - rowH * 0.075);
+      y += rowH; band = 0;
+      return;
+    }
+    const i = band++;
+    if (i % 2 === 0) { ctx.fillStyle = '#f1f8e9'; ctx.fillRect(50, y, W - 100, rowH); }
+    const cy = y + rowH / 2 - rowH * 0.075;
+    ctx.font = 'bold ' + fs + 'px ' + FONT;
+    ctx.fillStyle = '#000';
+    ctx.textAlign = 'right'; ctx.fillText(it.n, W - 80, cy);
+    ctx.fillStyle = '#1a237e';
+    ctx.textAlign = 'left';  ctx.fillText(qtyText(it), 80, cy);
+    y += rowH;
+  });
+
+  // نیچے: دکان کا نام (ہمیشہ اسی جگہ)
+  const fy = headH + listH;
+  ctx.strokeStyle = '#1b5e20'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(60, fy + 30); ctx.lineTo(W - 60, fy + 30); ctx.stroke();
+  ctx.fillStyle = '#1b5e20'; ctx.textAlign = 'center';
+  ctx.font = 'bold 54px ' + FONT;
+  ctx.fillText(SHOP, W / 2, fy + 120);
+}
+
+function save(){
+  cv.toBlob(b => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(b);
+    a.download = 'saman-list.jpg';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  }, 'image/jpeg', 0.95);
+}
+
+Object.keys(DEGS).forEach(k =>
+  document.getElementById('c_' + k).addEventListener('input', draw));
+document.getElementById('saveBtn').onclick = save;
+draw();
+
+// ===== PWA: آف لائن چلنے کے لیے service worker اور انسٹال بٹن =====
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+let deferredInstall = null;
+const installBtn = document.getElementById('installBtn');
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault(); deferredInstall = e; installBtn.style.display = 'inline-block';
+});
+installBtn.onclick = async () => {
+  if (!deferredInstall) return;
+  deferredInstall.prompt();
+  await deferredInstall.userChoice;
+  deferredInstall = null; installBtn.style.display = 'none';
+};
+window.addEventListener('appinstalled', () => { installBtn.style.display = 'none'; });
+</script>
+</body>
+</html>
