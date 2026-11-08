@@ -92,7 +92,7 @@ const DEGS = {
     { n:'آلو بخارا',          g:50,   base:'g' },
     { n:'دہی',                g:1000, base:'k' },
     { n:'کڑاہی گوشت مصالحہ',  q:1, unit:'ڈبہ' },
-    { n:'قصوری میتھی',        q:1, unit:'ڈبہ' },
+    { n:'قصوری میتھی',        q:1, unit:'ڈبہ', per:5 },
     { n:'نمک',                q:1, unit:'تھیلی' },
     { n:'چائنہ نمک',          g:30,   base:'g' },
     { n:'کالی مرچ',           g:20,   base:'g' },
@@ -102,7 +102,7 @@ const DEGS = {
 };
 
 // سبزی میں شامل چیزیں (باقی سب کریانہ میں)
-const VEG = new Set(['پیاز', 'ٹماٹر', 'تھوم', 'ادرک', 'سبز مرچ', 'لیموں']);
+const VEG = new Set(['پیاز', 'ٹماٹر', 'تھوم', 'ادرک', 'سبز مرچ', 'لیموں', 'دہی']);
 
 const FONT = '"Noto Nastaliq Urdu", "Noto Naskh Arabic", serif';
 
@@ -127,7 +127,7 @@ function mergeItems(counts){
         order.push(key);
       }
       const t = map.get(key);
-      if (it.q !== undefined) t.q += it.q * c; else t.g += it.g * c;
+      if (it.q !== undefined) t.q += it.q * (it.per ? Math.ceil(c / it.per) : c); else t.g += it.g * c;
     });
   });
   return order.map(k => map.get(k));
