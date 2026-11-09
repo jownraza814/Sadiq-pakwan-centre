@@ -42,7 +42,7 @@
 
 <script>
 // ===== دکان کی معلومات =====
-const SHOP  = 'صادق ڈراآئی کلینرز اینڈ پکوان سنٹر';
+const SHOP  = 'صادق پکوان سنٹر اینڈ ڈرائی کلینرز';
 const PHONE = '03017271392';
 
 // ===== سامان (1 دیگ کے حساب سے) =====
@@ -92,12 +92,15 @@ const DEGS = {
     { n:'آلو بخارا',          g:50,   base:'g' },
     { n:'دہی',                g:1000, base:'k' },
     { n:'کڑاہی گوشت مصالحہ',  q:1, unit:'ڈبہ' },
-    { n:'قصوری میتھی',        q:1, unit:'ڈبہ', per:5 },
+    { n:'قصوری میتھی',        q:1, unit:'ڈبہ', per:4 },
     { n:'نمک',                q:1, unit:'تھیلی' },
     { n:'چائنہ نمک',          g:30,   base:'g' },
     { n:'کالی مرچ',           g:20,   base:'g' },
     { n:'سفید زیرہ',          g:20,   base:'g' },
-    { n:'وائٹ کریم',          q:1, unit:'ڈبلی' }
+    { n:'وائٹ کریم',          q:1, unit:'ڈبلی' },
+    { n:'جائفل',              g:20,   base:'g' },
+    { n:'جاوتری',             g:10,   base:'g' },
+    { n:'سرکہ',               q:1, unit:'بوتل', per:4 }
   ]}
 };
 
@@ -181,7 +184,7 @@ async function draw(){
   try { await document.fonts.load('40px "Noto Nastaliq Urdu"'); } catch(e){}
 
   // پرچی کا سائز ہمیشہ ایک جیسا (پہلے والا ہی)
-  const W = 1080, H = 2205, headH = 400, footH = 230;
+  const W = 820, H = 2205, headH = 400, footH = 230;
   const listH = H - headH - footH;
   const rowH = Math.min(105, listH / Math.max(items.length, 1));
   const fs = Math.min(46, Math.floor(rowH * 0.5));   // زیادہ سامان ہو تو لکھائی چھوٹی
@@ -196,7 +199,9 @@ async function draw(){
 
   // اوپر: دکان کا نام اور نمبر
   ctx.fillStyle = '#1b5e20'; ctx.textAlign = 'center';
-  ctx.font = 'bold 58px ' + FONT;
+  let sf = 58;
+  ctx.font = 'bold ' + sf + 'px ' + FONT;
+  while (ctx.measureText(SHOP).width > W - 100 && sf > 24) { sf -= 2; ctx.font = 'bold ' + sf + 'px ' + FONT; }
   ctx.fillText(SHOP, W / 2, 110);
   ctx.fillStyle = '#000';
   ctx.font = 'bold 50px ' + FONT;
@@ -248,7 +253,9 @@ async function draw(){
   ctx.strokeStyle = '#1b5e20'; ctx.lineWidth = 3;
   ctx.beginPath(); ctx.moveTo(60, fy + 30); ctx.lineTo(W - 60, fy + 30); ctx.stroke();
   ctx.fillStyle = '#1b5e20'; ctx.textAlign = 'center';
-  ctx.font = 'bold 54px ' + FONT;
+  let ff = 54;
+  ctx.font = 'bold ' + ff + 'px ' + FONT;
+  while (ctx.measureText(SHOP).width > W - 100 && ff > 24) { ff -= 2; ctx.font = 'bold ' + ff + 'px ' + FONT; }
   ctx.fillText(SHOP, W / 2, fy + 120);
 }
 
