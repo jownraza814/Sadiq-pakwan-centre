@@ -153,7 +153,8 @@ function qtyText(it){
   if (it.base === 'g') {
     if (rem > 0) parts.push(rem + ' گرام');
   } else if (rem > 0) {
-    if (rem % 125 === 0) parts.push(fracPao(rem / 250) + ' پاؤ');
+    if (kg === 0 && rem === 500) parts.push('½ کلو');
+    else if (rem % 125 === 0) parts.push(fracPao(rem / 250) + ' پاؤ');
     else parts.push(rem + ' گرام');
   }
   return parts.join(' ');
